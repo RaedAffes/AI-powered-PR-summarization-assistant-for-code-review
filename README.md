@@ -6,7 +6,7 @@ This repository accompanies our investigation into whether automatically generat
 
 ## How It Works
 
-1. `GenerateSummary.py` produces a PR summary for every example in the CodeReviewQA dataset using Llama 3.2 via a local Ollama instance. The enriched dataset is saved to `CodeReviewQA_with_summary.json`.
+1. `GenerateSummary.py` produces a PR summary for every example in the CodeReviewQA dataset using Llama 3.2 via a local Ollama instance. The enriched dataset is saved to `CodeReviewQA_with_summaries.json`.
 
 2. The evaluation scripts (`ACR_ollama.py`, `CTR_ollama.py`, `CL_ollama.py`, `SI_ollama.py`) each run a model on the benchmark with and without the summary, then score its output against the gold standard.
 
@@ -66,7 +66,7 @@ After running `main.py --summary`, the same models are evaluated with the AI-gen
 ├── main.py                     # Runs all tasks for both models, writes results to CSV
 ├── ollama_api.py               # Thin HTTP client for the Ollama API
 ├── utils.py                    # Prompt templates and evaluation helpers
-├── CodeReviewQA_with_summary.json  # Dataset augmented with generated summaries
+├── CodeReviewQA_with_summaries.json  # Dataset augmented with generated summaries
 ├── results/
 │   └── results.csv             # Aggregated scores per model
 └── requirements.txt
@@ -91,7 +91,7 @@ ollama pull qwen2.5-coder:3b
 python GenerateSummary.py
 ```
 
-This reads from the Hugging Face dataset `Tomo-Melb/CodeReviewQA`, generates a summary for each example using Llama 3.2, and saves the result to `CodeReviewQA_with_summary.json`.
+This reads from the Hugging Face dataset `Tomo-Melb/CodeReviewQA`, generates a summary for each example using Llama 3.2, and saves the result to `CodeReviewQA_with_summaries.json`.
 
 ## Running Evaluation
 

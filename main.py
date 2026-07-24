@@ -4,7 +4,7 @@ import pandas as pd
 from ACR_ollama import save_csv_row
 
 RESULTS_CSV = "results/results.csv"
-MODELS = ["llama3.2:latest", "qwen2.5-coder:3b"]
+MODELS = ["llama3.2:latest"]
 DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -15,7 +15,7 @@ def already_done(model, task):
             val = df.loc[df["Model"] == model, task].values[0]
             return pd.notna(val)
         return False
-    except FileNotFoundError:
+    except (FileNotFoundError, pd.errors.EmptyDataError):
         return False
 
 
@@ -41,8 +41,14 @@ def main():
     print(f"\n{'='*60}")
     print("FINAL RESULTS")
     print(f"{'='*60}")
-    df = pd.read_csv(RESULTS_CSV)
-    print(df.to_string(index=False))
+    try:
+        df = pd.read_csv(RESULTS_CSV)
+        if df.empty:
+            print("No results yet.")
+        else:
+            print(df.to_string(index=False))
+    except (FileNotFoundError, pd.errors.EmptyDataError):
+        print("No results yet.")
 
 
 if __name__ == "__main__":

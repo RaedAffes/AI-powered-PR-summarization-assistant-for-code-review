@@ -1,5 +1,6 @@
 ### Import Libraries
 import os
+import re
 import sys
 import warnings
 import pandas as pd
@@ -13,8 +14,12 @@ RESULTS_CSV = "results/results.csv"
 
 
 def load_data(lang=None):
-    with open("CodeReviewQA_with_summary.json", "r", encoding="utf-8") as f:
-        data = [json.loads(line) for line in f]
+    with open("CodeReviewQA_with_summaries.json", "r", encoding="utf-8") as f:
+        content = f.read().strip()
+        if content.startswith("["):
+            data = json.loads(content)
+        else:
+            data = [json.loads(line) for line in content.splitlines() if line.strip()]
     if lang:
         data = [ex for ex in data if ex["lang"] == lang]
     return data
@@ -56,7 +61,12 @@ def test_prompt(test_set, language_type, use_summary):
 
 ### Evaluation (EXACT same as paper)
 def save_eval(gold, output):
-    generated = "\n".join([line[2:] for line in output.text.split("\n")])
+    raw = output.text.strip()
+    raw = re.sub(r'^```[^\n]*\n?', '', raw)
+    raw = re.sub(r'\n?```$', '', raw)
+    raw = re.sub(r'^\[[^\]]+\]\n?', '', raw)
+    raw = re.sub(r'\n?\[/[^\]]+\]$', '', raw)
+    generated = "\n".join([line[2:] for line in raw.split("\n")])
     result = myeval(gold, generated)
     record = [generated] + list(result)
     return pd.DataFrame([record], columns=['generation', 'em', 'em_trim', 'em_no_space', 'em_no_comment'])

@@ -67,8 +67,8 @@ new_dataset = data.add_column(
 
 # Save the new dataset locally
 new_dataset.save_to_disk(
-    "CodeReviewQA_with_summary"
+    "CodeReviewQA_with_summaries"
 )
 
-print("Dataset saved as CodeReviewQA_with_summary")
+print("Dataset saved as CodeReviewQA_with_summaries")
 
