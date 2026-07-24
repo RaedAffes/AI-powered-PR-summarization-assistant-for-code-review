@@ -1,7 +1,7 @@
 import json
 import requests
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
+OLLAMA_URL = "your-path-for-ollama" #http://localhost:port/api/chat
 
 
 def ask_generate(model, prompt, max_tokens=512, stop=None):
