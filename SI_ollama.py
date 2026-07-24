@@ -7,7 +7,7 @@ import itertools
 import pandas as pd
 from tqdm import tqdm
 from utils import si_prompt, si_prompt_summary, ct_formatter, remove_diffs, count_matching_elements
-from ollama_api import ask_guided
+from ollama_api import ask_guided_batch
 from ACR_ollama import save_csv_row, load_data
 
 warnings.filterwarnings("ignore")
@@ -55,11 +55,8 @@ def prompt_combinations(example, mode, language_type, use_summary):
 ### Evaluation (EXACT same logic as paper)
 def test_example(example, model_name, mode, language_type, use_summary):
     prompt_permutations, correct_answers, combinations = prompt_combinations(example, mode, language_type, use_summary)
-    model_answers = []
 
-    for prompt in prompt_permutations:
-        symbol_probs = ask_guided(model_name, prompt, ["A", "B", "C", "D"])
-        model_answers.append(symbol_probs)
+    model_answers = ask_guided_batch(model_name, prompt_permutations, ["A", "B", "C", "D"], max_workers=4)
 
     example_record = [combinations,
                       model_answers,

@@ -1,1 +1,3 @@
 Model,ACR,CTR,CLE,CLH,SIE,SIH
+llama3.2:latest,28.44,57.33,,,,
+qwen2.5-coder:3b,28.67,,,,,

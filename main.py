@@ -1,10 +1,16 @@
 import os
 import sys
+import gc
+import subprocess
 import pandas as pd
 from ACR_ollama import save_csv_row
 
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
 RESULTS_CSV = "results/results.csv"
-MODELS = ["llama3.2:latest"]
+MODELS = ["llama3.2:latest","qwen2.5-coder:3b"]
 DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -26,7 +32,12 @@ def run(model_name, task_name, cmd):
     print(f"\n{'='*60}")
     print(f"  {task_name} | {model_name}")
     print(f"{'='*60}")
-    os.system(cmd)
+    env = os.environ.copy()
+    env["OMP_NUM_THREADS"] = "1"
+    env["OPENBLAS_NUM_THREADS"] = "1"
+    env["MKL_NUM_THREADS"] = "1"
+    subprocess.run(cmd, shell=True, env=env)
+    gc.collect()
 
 
 def main():
