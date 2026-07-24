@@ -14,7 +14,7 @@ RESULTS_CSV = "results/results.csv"
 
 
 def load_data(lang=None):
-    with open("CodeReviewQA_with_summaries.json", "r", encoding="utf-8") as f:
+    with open("AI-powered-PR-summarization-assistant-for-code-review\\CodeReviewQA_with_summaries.json", "r", encoding="utf-8") as f:
         content = f.read().strip()
         if content.startswith("["):
             data = json.loads(content)
@@ -74,7 +74,7 @@ def save_eval(gold, output):
 
 ### Run Test
 def main():
-    model_name = sys.argv[1]  # e.g. llama3.2:latest
+    model_name = "qwen2.5-coder:3b"  # e.g. llama3.2:latest
     use_summary = "--summary" in sys.argv
     language_type = None
     for arg in sys.argv[2:]:

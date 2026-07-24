@@ -62,7 +62,7 @@ def test_example(example, model_name, language_type, use_summary):
 
 ### Run Test
 def main():
-    model_name = sys.argv[1]
+    model_name = "qwen2.5-coder:3b"  # e.g. llama3.2:latest
     use_summary = "--summary" in sys.argv
     language_type = None
     for arg in sys.argv[2:]:

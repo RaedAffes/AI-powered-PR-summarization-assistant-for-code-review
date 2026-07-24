@@ -4,7 +4,7 @@ import pandas as pd
 from ACR_ollama import save_csv_row
 
 RESULTS_CSV = "results/results.csv"
-MODELS = ["llama3.2:latest"]
+MODELS = ["qwen2.5-coder:3b"]
 DIR = os.path.dirname(os.path.abspath(__file__))
 
 

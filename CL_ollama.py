@@ -72,8 +72,8 @@ def test_example(example, model_name, mode, language_type, use_summary):
 
 ### Run Test
 def main():
-    model_name = sys.argv[1]
-    mode = sys.argv[2]  # easy or hard
+    model_name = "qwen2.5-coder:3b"  # e.g. llama3.2:latest
+    mode = "easy"# easy or hard
     use_summary = "--summary" in sys.argv
     language_type = None
     for arg in sys.argv[3:]:
