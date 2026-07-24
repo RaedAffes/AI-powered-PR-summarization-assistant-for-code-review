@@ -1,9 +1,11 @@
 import json
+import httpx
 from openai import OpenAI
 
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",
-    api_key="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"
+    api_key="",
+    timeout=httpx.Timeout(120.0, connect=10.0)
 )
 
 
@@ -25,6 +27,7 @@ def ask_guided(model, prompt, choices):
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
+        max_tokens=50,
         logprobs=True,
         top_logprobs=10,
     )
