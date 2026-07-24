@@ -6,7 +6,7 @@ import warnings
 import pandas as pd
 from tqdm import tqdm
 from utils import acr_prompt, acr_prompt_summary, remove_diffs, myeval
-from ollama_api import ask_generate
+from nvidia_api import ask_generate
 
 warnings.filterwarnings("ignore")
 
@@ -15,11 +15,7 @@ RESULTS_CSV = "results/results.csv"
 
 def load_data(lang=None):
     with open("CodeReviewQA_with_summaries.json", "r", encoding="utf-8") as f:
-        content = f.read().strip()
-        if content.startswith("["):
-            data = json.loads(content)
-        else:
-            data = [json.loads(line) for line in content.splitlines() if line.strip()]
+        data = json.load(f)
     if lang:
         data = [ex for ex in data if ex["lang"] == lang]
     return data

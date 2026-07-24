@@ -1,10 +1,16 @@
 import os
 import sys
+import gc
+import subprocess
 import pandas as pd
-from ACR_ollama import save_csv_row
+from ACR_nvidia import save_csv_row
+
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
 
 RESULTS_CSV = "results/results.csv"
-MODELS = ["llama3.2:latest"]
+MODELS = ["meta/llama-3.2-3b-instruct", "qwen/qwen2.5-coder-32b-instruct"]
 DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -26,17 +32,22 @@ def run(model_name, task_name, cmd):
     print(f"\n{'='*60}")
     print(f"  {task_name} | {model_name}")
     print(f"{'='*60}")
-    os.system(cmd)
+    env = os.environ.copy()
+    env["OMP_NUM_THREADS"] = "1"
+    env["OPENBLAS_NUM_THREADS"] = "1"
+    env["MKL_NUM_THREADS"] = "1"
+    subprocess.run(cmd, shell=True, env=env)
+    gc.collect()
 
 
 def main():
     for model in MODELS:
-        run(model, "ACR",  f"python ACR_ollama.py {model} --summary")
-        run(model, "CTR",  f"python CTR_ollama.py {model} --summary")
-        run(model, "CLE",  f"python CL_ollama.py {model} easy --summary")
-        run(model, "CLH",  f"python CL_ollama.py {model} hard --summary")
-        run(model, "SIE",  f"python SI_ollama.py {model} easy --summary")
-        run(model, "SIH",  f"python SI_ollama.py {model} hard --summary")
+        run(model, "ACR",  f"python ACR_nvidia.py {model} --summary")
+        run(model, "CTR",  f"python CTR_nvidia.py {model} --summary")
+        run(model, "CLE",  f"python CL_nvidia.py {model} easy --summary")
+        run(model, "CLH",  f"python CL_nvidia.py {model} hard --summary")
+        run(model, "SIE",  f"python SI_nvidia.py {model} easy --summary")
+        run(model, "SIH",  f"python SI_nvidia.py {model} hard --summary")
 
     print(f"\n{'='*60}")
     print("FINAL RESULTS")

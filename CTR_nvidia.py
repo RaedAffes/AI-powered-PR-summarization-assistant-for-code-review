@@ -7,8 +7,8 @@ import itertools
 import pandas as pd
 from tqdm import tqdm
 from utils import ctr_prompt, ctr_prompt_summary, ct_formatter, remove_diffs, count_matching_elements
-from ollama_api import ask_guided
-from ACR_ollama import save_csv_row, load_data
+from nvidia_api import ask_guided
+from ACR_nvidia import save_csv_row, load_data
 
 warnings.filterwarnings("ignore")
 

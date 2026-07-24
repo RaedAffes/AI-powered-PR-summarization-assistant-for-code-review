@@ -2,11 +2,11 @@ from datasets import load_dataset
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:11434/v1",
-    api_key="ollama"
+    base_url="https://integrate.api.nvidia.com/v1",
+    api_key="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"
 )
 
-model = "llama3.2"
+model = "meta/llama-3.2-3b-instruct"
 
 # Load dataset
 ds = load_dataset("Tomo-Melb/CodeReviewQA")
