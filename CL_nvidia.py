@@ -6,9 +6,10 @@ import warnings
 import itertools
 import pandas as pd
 from tqdm import tqdm
-from utils import cl_prompt, cl_prompt_summary, ct_formatter, remove_diffs, count_matching_elements
-from ollama_api import ask_guided_batch
-from ACR_ollama import save_csv_row, load_data
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from utils import cl_prompt, cl_prompt_summary, ct_formatter, remove_diffs, count_matching_elements, load_checkpoint, save_checkpoint
+from nvidia_api import ask_guided, MAX_WORKERS
+from ACR_nvidia import save_csv_row, load_data
 
 warnings.filterwarnings("ignore")
 
@@ -52,21 +53,6 @@ def prompt_combinations(example, mode, language_type, use_summary):
     return prompts, correct_symbols, all_permutations
 
 
-### Evaluation (EXACT same logic as paper)
-def test_example(example, model_name, mode, language_type, use_summary):
-    prompt_permutations, correct_answers, combinations = prompt_combinations(example, mode, language_type, use_summary)
-
-    model_answers = ask_guided_batch(model_name, prompt_permutations, ["A", "B", "C", "D"], max_workers=4)
-
-    example_record = [combinations,
-                      model_answers,
-                      [max(symbol_probs, key=symbol_probs.get) for symbol_probs in model_answers],
-                      correct_answers,
-                      example["type_correct"]]
-
-    return pd.DataFrame([example_record], columns=['combinations', 'softmax_probs', 'model_answers', 'correct_answers', 'GT'])
-
-
 ### Run Test
 def main():
     model_name = sys.argv[1]
@@ -80,13 +66,61 @@ def main():
 
     data = load_data(lang=language_type.lower() if language_type else None)
 
-    c_save = pd.DataFrame(columns=['combinations', 'softmax_probs', 'model_answers', 'correct_answers', 'GT'])
-    pbar = tqdm(range(len(data)), desc=f"CL-{mode} | {model_name}")
-    for row in pbar:
-        example_save = test_example(data[row], model_name, mode, language_type or "code", use_summary)
-        c_save = pd.concat([c_save, example_save])
-        inv = len(c_save.loc[c_save['model_answers'] == c_save['correct_answers']])
-        pbar.set_description(f"CL-{mode} | {model_name} | inv={inv}/{row+1}")
+    TASK = "CLE" if mode == "easy" else "CLH"
+    SYMBOLS = ["A", "B", "C", "D"]
+    partial = load_checkpoint(TASK, model_name)
+    partial = {k: v for k, v in partial.items()
+               if isinstance(v, dict) and all(a is not None for a in v.get("answers", []))}
+    remaining = [i for i in range(len(data)) if i not in partial]
+
+    pbar = tqdm(total=len(data), desc=f"CL-{mode} | {model_name}")
+    pbar.update(len(partial))
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+        pending = {}
+        in_flight = {}
+        for ex_idx in remaining:
+            prompt_permutations, correct_answers, combinations = prompt_combinations(data[ex_idx], mode, language_type or "code", use_summary)
+            in_flight[ex_idx] = {
+                "combinations": combinations,
+                "correct": correct_answers,
+                "answers": [None] * len(prompt_permutations),
+            }
+            for p_idx, prompt in enumerate(prompt_permutations):
+                fut = ex.submit(ask_guided, model_name, prompt, SYMBOLS)
+                pending[fut] = (ex_idx, p_idx)
+
+        saved_at = len(partial)
+        for fut in as_completed(pending):
+            ex_idx, p_idx = pending[fut]
+            try:
+                symbol_probs = fut.result()
+            except Exception:
+                save_checkpoint(TASK, model_name, partial)
+                raise
+            in_flight[ex_idx]["answers"][p_idx] = symbol_probs
+            if all(a is not None for a in in_flight[ex_idx]["answers"]):
+                partial[ex_idx] = in_flight[ex_idx]
+                inv = sum(1 for rec in partial.values()
+                          if [max(sp, key=sp.get) for sp in rec["answers"]] == rec["correct"])
+                pbar.set_description(f"CL-{mode} | {model_name} | inv={inv}/{len(partial)}")
+                pbar.update(1)
+                if len(partial) - saved_at >= 5:
+                    save_checkpoint(TASK, model_name, partial)
+                    saved_at = len(partial)
+    save_checkpoint(TASK, model_name, partial)
+    pbar.close()
+
+    records = []
+    for ex_idx in range(len(data)):
+        if ex_idx in partial and all(a is not None for a in partial[ex_idx]["answers"]):
+            rec = partial[ex_idx]
+            records.append([rec["combinations"],
+                            rec["answers"],
+                            [max(sp, key=sp.get) for sp in rec["answers"]],
+                            rec["correct"],
+                            data[ex_idx]["type_correct"]])
+    c_save = pd.DataFrame(records, columns=['combinations', 'softmax_probs', 'model_answers', 'correct_answers', 'GT'])
 
     # Output Results
     from utils import calc_results
@@ -95,8 +129,7 @@ def main():
     # Save to CSV
     invariant = len(c_save.loc[c_save['model_answers'] == c_save['correct_answers']])
     total = len(c_save)
-    task_name = "CLE" if mode == "easy" else "CLH"
-    save_csv_row(model_name, task_name, invariant / total * 100)
+    save_csv_row(model_name, TASK, invariant / total * 100)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,33 @@
 ### Import Libraries
 import re
+import os
+import pickle
+
+### Checkpoint Helpers
+def _checkpoint_dir():
+    d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results", "checkpoints")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def _checkpoint_path(task, model):
+    sanitized = model.replace("/", "_").replace(":", "_")
+    return os.path.join(_checkpoint_dir(), f"{task}_{sanitized}.pkl")
+
+
+def load_checkpoint(task, model):
+    path = _checkpoint_path(task, model)
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    return {}
+
+
+def save_checkpoint(task, model, data):
+    path = _checkpoint_path(task, model)
+    with open(path, "wb") as f:
+        pickle.dump(data, f)
+
 
 ### Code Formatting
 def remove_diffs(code_snippet):

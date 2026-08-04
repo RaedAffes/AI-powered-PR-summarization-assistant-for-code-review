@@ -1,3 +1,8 @@
 Model,ACR,CTR,CLE,CLH,SIE,SIH
-llama3.2:latest,28.44,57.33,,,,
-qwen2.5-coder:3b,28.67,,,,,
+nvidia/llama-3.3-nemotron-super-49b-v1,23.44,10.22,9.67,10.04,66.62,71.84
+meta-llama/llama-3.1-8b-instruct,16.44,18.11,0.22,0.11,0.0,0.0
+meta-llama/llama-3.1-70b-instruct,17.22,71.56,52.44,29.67,71.43,52.78
+meta-llama/llama-3.2-1b-instruct,0.44,41.33,0.4,0.0,0.53,0.53
+meta-llama/llama-3.2-3b-instruct,1.0,1.33,1.0,1.0,9.13,7.67
+microsoft/phi-4,3.44,0.0,0.0,0.0,0.0,0.0
+google/gemma-2-27b-it,38.56,,,,,
