@@ -14,7 +14,7 @@ RESULTS_CSV = "results/results.csv"
 
 
 def load_data(lang=None):
-    with open("AI-powered-PR-summarization-assistant-for-code-review\\CodeReviewQA_with_summaries.json", "r", encoding="utf-8") as f:
+    with open("CodeReviewQA_with_summaries.json", "r", encoding="utf-8") as f:
         content = f.read().strip()
         if content.startswith("["):
             data = json.loads(content)

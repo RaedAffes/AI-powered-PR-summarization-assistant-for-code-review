@@ -1,1 +1,4 @@
 Model,ACR,CTR,CLE,CLH,SIE,SIH
+qwen2.5-coder:3b,19.67,79.44,42,40,20.1,14.35
+llama3.2:latest,28.44,76.44,7.56,7.67,23.15,18.39
+nvidia/llama-3.3-nemotron-super-49b-v1,23.44,10.22,9.67,10.04,66.62,71.84
