@@ -1,0 +1,7 @@
+*.pkl
+*.sh
+*.csv
+.venv
+graphics
+*.pyc
+CodeReviewQA/__pycache__
