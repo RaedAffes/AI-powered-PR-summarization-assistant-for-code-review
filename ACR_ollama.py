@@ -7,7 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 from utils import acr_prompt, acr_prompt_summary, remove_diffs, myeval
 from ollama_api import ask_generate
-
+  
 warnings.filterwarnings("ignore")
 
 RESULTS_CSV = "results/results.csv"
