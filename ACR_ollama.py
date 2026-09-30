@@ -20,7 +20,7 @@ def load_data(lang=None):
         data = [ex for ex in data if ex["lang"] == lang]
     return data
 
-
+  
 import json
 
 
