@@ -1,114 +1,104 @@
-# Do AI-Generated PR Summaries Improve Code Review?
+# AI-Powered PR Summarization Assistant for Code Review
 
-This repository accompanies our investigation into whether automatically generated pull request summaries can improve how LLMs perform on code review tasks. We build on top of the [CodeReviewQA](https://github.com/hongyi-tom/CodeReviewQA) benchmark (Lin et al., ACL 2025) and extend it by injecting AI-generated summaries into the review context, then measuring the effect across multiple comprehension dimensions.
+Does giving a language model a generated pull request summary help it understand code reviews better?
 
-**Research question:** Does providing an LLM with a PR summary alongside the code diff and review comment lead to better code review comprehension?
+This project extends the [CodeReviewQA](https://github.com/hongyi-tom/CodeReviewQA) benchmark (Lin et al., ACL 2025) by injecting an AI-generated PR summary into the review context, then measuring the effect on six code review comprehension tasks.
 
 ## How It Works
 
-1. `GenerateSummary.py` produces a PR summary for every example in the CodeReviewQA dataset using Llama 3.2 via a local Ollama instance. The enriched dataset is saved to `CodeReviewQA_with_summaries.json`.
+1. **Generate summaries** — `GenerateSummary.py` writes a PR summary for every benchmark example using Llama 3.2 through a local [Ollama](https://ollama.com/) instance, producing `CodeReviewQA_with_summaries.json`.
+2. **Run evaluations** — each task script (`ACR_ollama.py`, `CTR_ollama.py`, `CL_ollama.py`, `SI_ollama.py`) runs a model with and without the summary and scores its output against the gold answer.
+3. **Aggregate** — `main.py` loops over both models and all six tasks, skipping anything already present in `results/results.csv`.
 
-2. The evaluation scripts (`ACR_ollama.py`, `CTR_ollama.py`, `CL_ollama.py`, `SI_ollama.py`) each run a model on the benchmark with and without the summary, then score its output against the gold standard.
+## Models
 
-3. `main.py` ties everything together -- it loops over both models and all six tasks, skipping anything already recorded in `results/results.csv`.
+Both models are small enough to run locally and are served through Ollama via the thin HTTP client in `ollama_api.py`.
 
-## Models Under Evaluation
+| Model | Ollama tag |
+|-------|------------|
+| Qwen2.5-Coder-3B-Instruct | `qwen2.5-coder:3b` |
+| Llama-3.2-3B-Instruct | `llama3.2:latest` |
 
-We evaluate two small, open-weight instruct models that are practical to run locally:
+## Tasks
 
-| Model | Parameters | Source |
-|-------|-----------|--------|
-| Qwen2.5-Coder-3B-Instruct | 3B | `qwen2.5-coder:3b` |
-| Llama-3.2-3B-Instruct | 3B | `llama3.2:latest` |
-
-Both are served through [Ollama](https://ollama.com/) and called via a lightweight HTTP wrapper (`ollama_api.py`).
-
-## Tasks and Metrics
-
-Each task corresponds to one column in the results table. The first is a generative task (exact match); the remaining five are multiple-choice.
-
-| Abbreviation | Full Name | Type |
-|-------------|-----------|------|
-| ACR | Automated Code Refinement | Generative (EM%) |
-| CTR | Change Type Recognition | MCQ Accuracy% |
-| CLE | Change Localisation (Easy) | MCQ Accuracy% |
-| CLH | Change Localisation (Hard) | MCQ Accuracy% |
-| SIE | Solution Identification (Easy) | MCQ Accuracy% |
-| SIH | Solution Identification (Hard) | MCQ Accuracy% |
-
-## Baseline Results (Without Summary)
-
-These are the scores from the original CodeReviewQA setup, where models receive only the code snippet and the review comment -- no summary.
-
-| Model | ACR | CTR | CLE | CLH | SIE | SIH |
-|-------|-----|-----|-----|-----|-----|-----|
-| Qwen2.5-Coder-3B-Instruct | 30.3 | 77.7 | 1.8 | 1.8 | 12.2 | 8.0 |
-| Llama-3.2-3B-Instruct | 25.9 | 78.8 | 0.8 | 0.4 | 9.9 | 7.6 |
-
-## Results With Summary
-
-After running `main.py --summary`, the same models are evaluated with the AI-generated PR summary injected into the prompt. This table will be populated once the full evaluation completes.
-
-| Model | ACR | CTR | CLE | CLH | SIE | SIH |
-|-------|-----|-----|-----|-----|-----|-----|
-| Qwen2.5-Coder-3B-Instruct | -- | -- | -- | -- | -- | -- |
-| Llama-3.2-3B-Instruct | -- | -- | -- | -- | -- | -- |
-
-## Project Structure
-
-```
-.
-├── GenerateSummary.py          # Generates PR summaries for the dataset via Ollama
-├── ACR_ollama.py               # Automated Code Refinement evaluation
-├── CTR_ollama.py               # Change Type Recognition evaluation
-├── CL_ollama.py                # Change Localisation evaluation (easy + hard)
-├── SI_ollama.py                # Solution Identification evaluation (easy + hard)
-├── main.py                     # Runs all tasks for both models, writes results to CSV
-├── ollama_api.py               # Thin HTTP client for the Ollama API
-├── utils.py                    # Prompt templates and evaluation helpers
-├── CodeReviewQA_with_summaries.json  # Dataset augmented with generated summaries
-├── results/
-│   └── results.csv             # Aggregated scores per model
-└── requirements.txt
-```
+| Abbreviation | Task | Type | Metric |
+|--------------|------|------|--------|
+| ACR | Automated Code Refinement | Generative | Exact Match % |
+| CTR | Change Type Recognition | Multiple choice | Accuracy % |
+| CLE | Change Localisation (Easy) | Multiple choice | Accuracy % |
+| CLH | Change Localisation (Hard) | Multiple choice | Accuracy % |
+| SIE | Solution Identification (Easy) | Multiple choice | Accuracy % |
+| SIH | Solution Identification (Hard) | Multiple choice | Accuracy % |
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
+pip install datasets openai   # only needed to regenerate summaries
 ```
 
-You also need [Ollama](https://ollama.com/) running locally with the required models pulled:
+Install Ollama and pull the models:
 
 ```bash
 ollama pull llama3.2
 ollama pull qwen2.5-coder:3b
 ```
 
-## Generating Summaries
+## Usage
 
 ```bash
+# 1. Generate the summary-augmented dataset (once)
 python GenerateSummary.py
+
+# 2. Run every task for both models, with summaries
+python main.py
 ```
 
-This reads from the Hugging Face dataset `Tomo-Melb/CodeReviewQA`, generates a summary for each example using Llama 3.2, and saves the result to `CodeReviewQA_with_summaries.json`.
-
-## Running Evaluation
+Or run a single task:
 
 ```bash
-# Run all tasks for both models (with summary)
-python main.py
-
-# Or run a single task manually
 python ACR_ollama.py llama3.2:latest --summary
 python CTR_ollama.py qwen2.5-coder:3b --summary
 python CL_ollama.py llama3.2:latest easy --summary
 python SI_ollama.py qwen2.5-coder:3b hard --summary
 ```
 
-## Reference
+Drop the `--summary` flag to evaluate without the injected summary (baseline). Results are appended to `results/results.csv`; re-running `main.py` resumes from where it left off.
 
-This project extends the CodeReviewQA benchmark:
+## Results
+
+Baseline scores from the original CodeReviewQA setup (code snippet + review comment only):
+
+| Model | ACR | CTR | CLE | CLH | SIE | SIH |
+|-------|-----|-----|-----|-----|-----|-----|
+| Qwen2.5-Coder-3B-Instruct | 30.3 | 77.7 | 1.8 | 1.8 | 12.2 | 8.0 |
+| Llama-3.2-3B-Instruct | 25.9 | 78.8 | 0.8 | 0.4 | 9.9 | 7.6 |
+
+Scores with the AI-generated summary (run in progress):
+
+| Model | ACR | CTR | CLE | CLH | SIE | SIH |
+|-------|-----|-----|-----|-----|-----|-----|
+| Qwen2.5-Coder-3B-Instruct | 28.7 | – | – | – | – | – |
+| Llama-3.2-3B-Instruct | 28.4 | 57.3 | – | – | – | – |
+
+## Project Structure
+
+```
+.
+├── GenerateSummary.py              # Generates PR summaries via Ollama
+├── ACR_ollama.py                   # Automated Code Refinement
+├── CTR_ollama.py                   # Change Type Recognition
+├── CL_ollama.py                    # Change Localisation (easy + hard)
+├── SI_ollama.py                    # Solution Identification (easy + hard)
+├── main.py                         # Runs all tasks for both models
+├── ollama_api.py                   # HTTP client for the Ollama API
+├── utils.py                        # Prompt templates and scoring helpers
+├── CodeReviewQA_with_summaries.json # Dataset + generated summaries
+├── results/results.csv             # Aggregated scores per model
+└── requirements.txt
+```
+
+## Reference
 
 ```
 @inproceedings{lin-etal-2025-codereviewqa,
@@ -125,3 +115,5 @@ This project extends the CodeReviewQA benchmark:
     ISBN = "979-8-89176-256-5"
 }
 ```
+
+Released under the MIT License (inherited from CodeReviewQA).
